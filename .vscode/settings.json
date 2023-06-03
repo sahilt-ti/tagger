@@ -1,0 +1,5 @@
+{
+	"cloudfix-linter.Platforms": [
+		"Terraform"
+	]
+}
