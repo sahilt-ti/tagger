@@ -10,6 +10,11 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/zclconf/go-cty/cty"
 )
+type Tag struct {
+	Key   string
+	Value string
+}
+
 var ignoredDirs = []string{".git", ".DS_Store", ".idea", ".terraform"}
 
 func main() {
@@ -24,7 +29,6 @@ func main() {
 		fmt.Printf("Failed to find Terraform files: %s\n", err)
 		return
 	}
-
 	for _, file := range files {
 		err := addTags(file)
 		if err != nil {
@@ -50,38 +54,68 @@ func addTags(filePath string) error {
 		if rawBlock.Type() != "resource" {
 			continue
 		}
-		nested := rawBlock.Body().Blocks()
-		for _, innerBlock := range nested {
-			if innerBlock.Type() != "ebs_block_device" &&
-				innerBlock.Type() != "root_block_device" {
+		nestedBlocks := rawBlock.Body().Blocks()
+		for _, nestedBlock := range nestedBlocks {
+			if nestedBlock.Type() != "ebs_block_device" &&
+				nestedBlock.Type() != "root_block_device" {
 				continue
 			}
-			tagsMap := make(map[string]cty.Value, 1)
-			tagsAttribute := innerBlock.Body().GetAttribute("tags")
-
+			tagsAttribute := nestedBlock.Body().GetAttribute("tags")
+			
+			tags := make([]hclwrite.ObjectAttrTokens, 0)
+			traceAdded := false
 			if tagsAttribute != nil {
 				tagsTokens := tagsAttribute.Expr().BuildTokens(hclwrite.Tokens{})
-				parsedTags := parseTagAttribute(tagsTokens)
-				for key := range parsedTags {
-					tagsMap[key] = cty.StringVal(parsedTags[key])
+				resourceTags := parseTagAttribute(tagsTokens)
+				for index := range resourceTags {
+					key := resourceTags[index].Key
+					value := resourceTags[index].Value
+					if key == "cloudfix:linter_yor_trace" {
+						traceAdded = true
+						value = uuid.New().String()
+					}
+					tags = append(tags, hclwrite.ObjectAttrTokens{
+						Name:   hclwrite.TokensForValue(cty.StringVal(key)),
+						Value: hclwrite.TokensForValue(cty.StringVal(value)),
+					})
 				}
 			}
-			tagsMap["cloudfix:linter_yor_trace"] = cty.StringVal(uuid.New().String())
-			innerBlock.Body().SetAttributeRaw("tags", hclwrite.TokensForValue(cty.MapVal(tagsMap)))
+			if !traceAdded {
+				tags = append(tags, hclwrite.ObjectAttrTokens{
+					Name:   hclwrite.TokensForValue(cty.StringVal("cloudfix:linter_yor_trace")),
+					Value: hclwrite.TokensForValue(cty.StringVal(uuid.New().String())),
+				})
+			}
+			nestedBlock.Body().SetAttributeRaw("tags", hclwrite.TokensForObject(tags))
 		}
-
-		tagsMap := make(map[string]cty.Value, 1)
+		
 		tagsAttribute := rawBlock.Body().GetAttribute("tags")
-
+		
+		tags := make([]hclwrite.ObjectAttrTokens, 0)
+		traceAdded := false
 		if tagsAttribute != nil {
 			tagsTokens := tagsAttribute.Expr().BuildTokens(hclwrite.Tokens{})
-			parsedTags := parseTagAttribute(tagsTokens)
-			for key := range parsedTags {
-				tagsMap[key] = cty.StringVal(parsedTags[key])
+			nestedTags := parseTagAttribute(tagsTokens)
+			for index := range nestedTags {
+				key := nestedTags[index].Key
+				value := nestedTags[index].Value
+				if key == "cloudfix:linter_yor_trace" {
+					traceAdded = true
+					value = uuid.New().String()
+				}
+				tags = append(tags, hclwrite.ObjectAttrTokens{
+					Name:   hclwrite.TokensForValue(cty.StringVal(key)),
+					Value: hclwrite.TokensForValue(cty.StringVal(value)),
+				})
 			}
 		}
-		tagsMap["cloudfix:linter_yor_trace"] = cty.StringVal(uuid.New().String())
-		rawBlock.Body().SetAttributeRaw("tags", hclwrite.TokensForValue(cty.MapVal(tagsMap)))
+		if !traceAdded {
+			tags = append(tags, hclwrite.ObjectAttrTokens{
+				Name:   hclwrite.TokensForValue(cty.StringVal("cloudfix:linter_yor_trace")),
+				Value: hclwrite.TokensForValue(cty.StringVal(uuid.New().String())),
+			})
+		}
+		rawBlock.Body().SetAttributeRaw("tags", hclwrite.TokensForObject(tags))
 	}
 
 	err = os.WriteFile(filePath, hclFile.Bytes(), 0644)
