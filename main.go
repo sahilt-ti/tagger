@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/zclconf/go-cty/cty"
 )
+var ignoredDirs = []string{".git", ".DS_Store", ".idea", ".terraform"}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -99,6 +100,11 @@ func findTerraformFiles(dir string) ([]string, error) {
 			return fmt.Errorf("failed to scan directory %s: %s", path, err)
 		}
 		if !info.IsDir() && filepath.Ext(path) == ".tf" {
+			for _, ignoredDir := range ignoredDirs {
+				if filepath.Dir(path) == ignoredDir {
+					return nil
+				}
+			}
 			files = append(files, path)
 		}
 		return nil
