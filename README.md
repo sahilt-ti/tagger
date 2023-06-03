@@ -1,6 +1,6 @@
 # tagger
 
-Commmands:
+Commands:
 ```
 go get .
 go build .
