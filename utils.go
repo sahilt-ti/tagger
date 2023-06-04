@@ -88,13 +88,13 @@ func getHclMapsContents(tokens hclwrite.Tokens) []hclwrite.Tokens {
 	return hclMaps
 }
 
-func parseTagAttribute(tokens hclwrite.Tokens) ([]hclwrite.ObjectAttrTokens) {
+func parseTagAttribute(tokens hclwrite.Tokens) []hclwrite.ObjectAttrTokens {
 	hclMaps := getHclMapsContents(tokens)
 	tagPairs := make([]hclwrite.Tokens, 0)
 	for _, hclMap := range hclMaps {
 		tagPairs = append(tagPairs, extractTagPairs(hclMap)...)
 	}
-	
+
 	tags := make([]hclwrite.ObjectAttrTokens, 0)
 	for _, entry := range tagPairs {
 		eqIndex := -1
@@ -110,7 +110,7 @@ func parseTagAttribute(tokens hclwrite.Tokens) ([]hclwrite.ObjectAttrTokens) {
 		_ = json.Unmarshal([]byte(key), &key)
 		_ = json.Unmarshal([]byte(value), &value)
 		tags = append(tags, hclwrite.ObjectAttrTokens{
-			Name:   hclwrite.TokensForValue(cty.StringVal(key)),
+			Name:  hclwrite.TokensForValue(cty.StringVal(key)),
 			Value: hclwrite.TokensForValue(cty.StringVal(value)),
 		})
 	}

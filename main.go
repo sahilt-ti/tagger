@@ -13,19 +13,17 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Please provide the directory path as a command-line argument.")
-		return
+		panic("Please provide the directory path as a command-line argument.")
 	}
 	dir := os.Args[1]
 	files, err := findTerraformFiles(dir)
 	if err != nil {
-		fmt.Printf("Failed to find Terraform files: %s\n", err)
-		return
+		panic(fmt.Sprintf("Failed to find Terraform files: %s\n", err))
 	}
 	for _, file := range files {
 		err := addTags(file)
 		if err != nil {
-			fmt.Printf("Failed to add tags to file %s: %s\n", file, err)
+			panic(fmt.Sprintf("Failed to add tags to file %s: %s\n", file, err))
 		}
 	}
 }
@@ -79,7 +77,7 @@ func addTraceTag(block *hclwrite.Block) {
 	}
 	if !traceAdded {
 		tags = append(tags, hclwrite.ObjectAttrTokens{
-			Name:   hclwrite.TokensForValue(cty.StringVal("cloudfix:linter_yor_trace")),
+			Name:  hclwrite.TokensForValue(cty.StringVal("cloudfix:linter_yor_trace")),
 			Value: hclwrite.TokensForValue(cty.StringVal(uuid.New().String())),
 		})
 	}
