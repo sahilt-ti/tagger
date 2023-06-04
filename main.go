@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/hcl/v2"
@@ -94,7 +95,7 @@ func findTerraformFiles(dir string) ([]string, error) {
 		}
 		if !info.IsDir() && filepath.Ext(path) == ".tf" {
 			for _, ignoredDir := range ignoredDirs {
-				if filepath.Dir(path) == ignoredDir {
+				if strings.Contains(path, ignoredDir) {
 					return nil
 				}
 			}
