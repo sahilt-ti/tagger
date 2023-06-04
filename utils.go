@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/zclconf/go-cty/cty"
 )
 
 func inSlice[T comparable](elems []T, v T) bool {
@@ -107,13 +105,11 @@ func parseTagAttribute(tokens hclwrite.Tokens) []hclwrite.ObjectAttrTokens {
 		}
 		value := string(entry[eqIndex:].Bytes())
 		value = strings.TrimPrefix(strings.TrimSuffix(value, " "), " ")
-		_ = json.Unmarshal([]byte(key), &key)
-		_ = json.Unmarshal([]byte(value), &value)
+		
 		tags = append(tags, hclwrite.ObjectAttrTokens{
-			Name:  hclwrite.TokensForValue(cty.StringVal(key)),
-			Value: hclwrite.TokensForValue(cty.StringVal(value)),
+			Name:  hclwrite.TokensForIdentifier(key),
+			Value: hclwrite.TokensForIdentifier(value),
 		})
 	}
-
 	return tags
 }
