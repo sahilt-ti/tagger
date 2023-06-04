@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/zclconf/go-cty/cty"
 )
 
 func inSlice[T comparable](elems []T, v T) bool {
@@ -87,14 +88,14 @@ func getHclMapsContents(tokens hclwrite.Tokens) []hclwrite.Tokens {
 	return hclMaps
 }
 
-func parseTagAttribute(tokens hclwrite.Tokens) ([]Tag) {
+func parseTagAttribute(tokens hclwrite.Tokens) ([]hclwrite.ObjectAttrTokens) {
 	hclMaps := getHclMapsContents(tokens)
 	tagPairs := make([]hclwrite.Tokens, 0)
 	for _, hclMap := range hclMaps {
 		tagPairs = append(tagPairs, extractTagPairs(hclMap)...)
 	}
 	
-	tags := make([]Tag, 0)
+	tags := make([]hclwrite.ObjectAttrTokens, 0)
 	for _, entry := range tagPairs {
 		eqIndex := -1
 		var key string
@@ -108,7 +109,10 @@ func parseTagAttribute(tokens hclwrite.Tokens) ([]Tag) {
 		value = strings.TrimPrefix(strings.TrimSuffix(value, " "), " ")
 		_ = json.Unmarshal([]byte(key), &key)
 		_ = json.Unmarshal([]byte(value), &value)
-		tags = append(tags, Tag{Key: key, Value: value})
+		tags = append(tags, hclwrite.ObjectAttrTokens{
+			Name:   hclwrite.TokensForValue(cty.StringVal(key)),
+			Value: hclwrite.TokensForValue(cty.StringVal(value)),
+		})
 	}
 
 	return tags

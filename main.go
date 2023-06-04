@@ -66,18 +66,12 @@ func addTags(filePath string) error {
 			traceAdded := false
 			if tagsAttribute != nil {
 				tagsTokens := tagsAttribute.Expr().BuildTokens(hclwrite.Tokens{})
-				resourceTags := parseTagAttribute(tagsTokens)
-				for index := range resourceTags {
-					key := resourceTags[index].Key
-					value := resourceTags[index].Value
-					if key == "cloudfix:linter_yor_trace" {
+				tags = parseTagAttribute(tagsTokens)
+				for index, tag := range tags {
+					if string(tag.Name.Bytes()) == `"cloudfix:linter_yor_trace"` {
 						traceAdded = true
-						value = uuid.New().String()
+						tags[index].Value = hclwrite.TokensForValue(cty.StringVal(uuid.New().String()))
 					}
-					tags = append(tags, hclwrite.ObjectAttrTokens{
-						Name:   hclwrite.TokensForValue(cty.StringVal(key)),
-						Value: hclwrite.TokensForValue(cty.StringVal(value)),
-					})
 				}
 			}
 			if !traceAdded {
@@ -95,18 +89,12 @@ func addTags(filePath string) error {
 		traceAdded := false
 		if tagsAttribute != nil {
 			tagsTokens := tagsAttribute.Expr().BuildTokens(hclwrite.Tokens{})
-			nestedTags := parseTagAttribute(tagsTokens)
-			for index := range nestedTags {
-				key := nestedTags[index].Key
-				value := nestedTags[index].Value
-				if key == "cloudfix:linter_yor_trace" {
+			tags = parseTagAttribute(tagsTokens)
+			for index, tag := range tags {
+				if string(tag.Name.Bytes()) == `"cloudfix:linter_yor_trace"` {
 					traceAdded = true
-					value = uuid.New().String()
+					tags[index].Value = hclwrite.TokensForValue(cty.StringVal(uuid.New().String()))
 				}
-				tags = append(tags, hclwrite.ObjectAttrTokens{
-					Name:   hclwrite.TokensForValue(cty.StringVal(key)),
-					Value: hclwrite.TokensForValue(cty.StringVal(value)),
-				})
 			}
 		}
 		if !traceAdded {
